@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Snake iPhone</title>
+<title>Snake iPhone Responsive</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
@@ -13,23 +13,32 @@
         display: flex;
         justify-content: center;
         align-items: flex-start;
-        height: 100vh;
         margin: 0;
+        padding: 10px 0;
         overflow-x: hidden;
         touch-action: none;
-        padding-top: 10px;
+        flex-direction: column;
     }
 
     #container {
         text-align: center;
+        width: 100%;
+    }
+
+    /* Canvas responsive */
+    #canvasWrapper {
+        width: 100%;
+        max-width: 480px;
+        margin: 0 auto;
     }
 
     canvas {
+        width: 100% !important;        /* se adapta al ancho del iPhone */
+        height: auto !important;       /* mantiene proporción */
+        display: none;
         background: #000;
         border: 3px solid #0f0;
         image-rendering: pixelated;
-        display: none;
-        margin-bottom: 20px;
     }
 
     button {
@@ -43,12 +52,11 @@
         border-radius: 5px;
     }
 
-    /* CONTROLES TÁCTILES COLOCADOS DEBAJO DEL JUEGO */
+    /* Controles táctiles debajo del juego */
     #touchControls {
         width: 260px;
-        margin: 0 auto;
+        margin: 15px auto 0 auto;
         display: none;
-        margin-top: 10px;
     }
 
     .dpad-row {
@@ -67,16 +75,15 @@
         color: #0f0;
         user-select: none;
     }
-
 </style>
 </head>
 <body>
 
 <div id="container">
 
-    <!-- MENÚ INICIAL -->
+    <!-- MENÚ -->
     <div id="menu">
-        <h1>🐍 Snake Avanzado (iPhone)</h1>
+        <h1>🐍 Snake iPhone Responsive</h1>
 
         <p><b>Skin:</b></p>
         <select id="skinSelect">
@@ -110,10 +117,12 @@
         Puntuación: <span id="score">0</span>
     </div>
 
-    <!-- JUEGO -->
-    <canvas id="game" width="480" height="480"></canvas>
+    <!-- CANVAS RESPONSIVE -->
+    <div id="canvasWrapper">
+        <canvas id="game" width="480" height="480"></canvas>
+    </div>
 
-    <!-- CONTROLES TÁCTILES DEBAJO DEL GAME -->
+    <!-- CONTROLES TÁCTILES -->
     <div id="touchControls">
         <div class="dpad-row"><button class="dpad-btn" id="btnUp">⬆️</button></div>
         <div class="dpad-row">
@@ -153,6 +162,20 @@ let soundEnabled = true;
 // Sonidos
 const eatSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
 const gameOverSound = new Audio("https://actions.google.com/sounds/v1/cartoon/concussive_hit_guitar_boing.ogg");
+
+// ----------------------------
+// JUEGO RESPONSIVE
+// ----------------------------
+function resizeCanvas() {
+    const wrapper = document.getElementById("canvasWrapper");
+    const size = Math.min(wrapper.clientWidth, window.innerHeight * 0.7);
+
+    canvas.style.width = size + "px";
+    canvas.style.height = size + "px";
+}
+
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
 
 // ----------------------------
 // INICIO DEL JUEGO
@@ -222,11 +245,9 @@ function spawnFood() {
 function draw() {
     ctx.clearRect(0,0,480,480);
 
-    // comida
     ctx.fillStyle = "#f00";
     ctx.fillRect(food.x, food.y, 20, 20);
 
-    // snake
     ctx.fillStyle = skin;
     snake.forEach(s => ctx.fillRect(s.x, s.y, 20, 20));
 }
@@ -237,21 +258,20 @@ function checkCollision() {
     if (head.x < 0 || head.x >= 480 || head.y < 0 || head.y >= 480)
         return true;
 
-    for (let i=1; i < snake.length; i++) {
+    for (let i=1; i<snake.length; i++) {
         if (head.x === snake[i].x && head.y === snake[i].y)
             return true;
     }
-
     return false;
 }
 
 function endGame() {
     running = false;
     clearInterval(gameLoop);
+
     if (soundEnabled) gameOverSound.play();
 
     document.getElementById("finalScore").innerText = score;
-
     document.getElementById("game").style.display = "none";
     document.getElementById("touchControls").style.display = "none";
     document.getElementById("gameOver").style.display = "block";
@@ -263,7 +283,7 @@ function backToMenu() {
 }
 
 // ----------------------------
-// CONTROLES TÁCTILES (iPhone)
+// CONTROLES TÁCTILES
 // ----------------------------
 document.getElementById("btnUp").addEventListener("touchstart", () => {
     if (dy === 0) { dx = 0; dy = -20; }
@@ -278,13 +298,6 @@ document.getElementById("btnRight").addEventListener("touchstart", () => {
     if (dx === 0) { dx = 20; dy = 0; }
 });
 
-// También en PC con teclado
-document.addEventListener("keydown", e => {
-    if (e.key === "ArrowUp" && dy === 0) { dx = 0; dy = -20; }
-    if (e.key === "ArrowDown" && dy === 0) { dx = 0; dy = 20; }
-    if (e.key === "ArrowLeft" && dx === 0) { dx = -20; dy = 0; }
-    if (e.key === "ArrowRight" && dx === 0) { dx = 20; dy = 0; }
-});
 </script>
 
 </body>
