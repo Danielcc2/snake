@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Snake Avanzado iPhone</title>
+<title>Snake iPhone</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
@@ -12,11 +12,12 @@
         font-family: Arial, sans-serif;
         display: flex;
         justify-content: center;
-        align-items: center;
+        align-items: flex-start;
         height: 100vh;
         margin: 0;
-        overflow: hidden;
+        overflow-x: hidden;
         touch-action: none;
+        padding-top: 10px;
     }
 
     #container {
@@ -28,6 +29,7 @@
         border: 3px solid #0f0;
         image-rendering: pixelated;
         display: none;
+        margin-bottom: 20px;
     }
 
     button {
@@ -41,14 +43,12 @@
         border-radius: 5px;
     }
 
-    /* CONTROLES TÁCTILES */
+    /* CONTROLES TÁCTILES COLOCADOS DEBAJO DEL JUEGO */
     #touchControls {
-        position: absolute;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 240px;
+        width: 260px;
+        margin: 0 auto;
         display: none;
+        margin-top: 10px;
     }
 
     .dpad-row {
@@ -60,7 +60,7 @@
     .dpad-btn {
         width: 70px;
         height: 70px;
-        background: rgba(0,255,0,0.3);
+        background: rgba(0,255,0,0.25);
         border: 2px solid #0f0;
         border-radius: 15px;
         font-size: 28px;
@@ -74,11 +74,11 @@
 
 <div id="container">
 
-    <!-- MENU -->
+    <!-- MENÚ INICIAL -->
     <div id="menu">
         <h1>🐍 Snake Avanzado (iPhone)</h1>
 
-        <p><b>Selecciona skin:</b></p>
+        <p><b>Skin:</b></p>
         <select id="skinSelect">
             <option value="#0f0">Verde</option>
             <option value="#0ff">Cian</option>
@@ -98,16 +98,30 @@
         <p><b>Sonido:</b></p>
         <select id="soundSelect">
             <option value="on">Activado</option>
-            <option value="off">Off</option>
+            <option value="off">Desactivado</option>
         </select>
 
         <br><br>
         <button onclick="startGame()">Iniciar Juego</button>
     </div>
 
-    <div id="scoreBox" style="display:none;">Puntuación: <span id="score">0</span></div>
+    <!-- PUNTUACIÓN -->
+    <div id="scoreBox" style="display:none; font-size:22px; margin-bottom:15px;">
+        Puntuación: <span id="score">0</span>
+    </div>
 
+    <!-- JUEGO -->
     <canvas id="game" width="480" height="480"></canvas>
+
+    <!-- CONTROLES TÁCTILES DEBAJO DEL GAME -->
+    <div id="touchControls">
+        <div class="dpad-row"><button class="dpad-btn" id="btnUp">⬆️</button></div>
+        <div class="dpad-row">
+            <button class="dpad-btn" id="btnLeft">⬅️</button>
+            <button class="dpad-btn" id="btnRight">➡️</button>
+        </div>
+        <div class="dpad-row"><button class="dpad-btn" id="btnDown">⬇️</button></div>
+    </div>
 
     <!-- GAME OVER -->
     <div id="gameOver" style="display:none;">
@@ -116,25 +130,12 @@
         <button onclick="startGame()">Jugar otra vez</button>
         <button onclick="backToMenu()">Menú</button>
     </div>
-</div>
 
-<!-- CONTROLES TÁCTILES -->
-<div id="touchControls">
-    <div class="dpad-row">
-        <button class="dpad-btn" id="btnUp">⬆️</button>
-    </div>
-    <div class="dpad-row">
-        <button class="dpad-btn" id="btnLeft">⬅️</button>
-        <button class="dpad-btn" id="btnRight">➡️</button>
-    </div>
-    <div class="dpad-row">
-        <button class="dpad-btn" id="btnDown">⬇️</button>
-    </div>
 </div>
 
 <script>
 // ----------------------------
-// VARIABLES PRINCIPALES
+// VARIABLES
 // ----------------------------
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
@@ -167,7 +168,9 @@ function startGame() {
     ];
     dx = 20;
     dy = 0;
+
     score = 0;
+    document.getElementById("score").innerText = score;
 
     document.getElementById("menu").style.display = "none";
     document.getElementById("gameOver").style.display = "none";
@@ -196,7 +199,7 @@ function update() {
 }
 
 function moveSnake() {
-    const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+    const head = { x: snake[0].x + dx, y: snake[0].y + dy };
     snake.unshift(head);
 
     if (head.x === food.x && head.y === food.y) {
@@ -219,9 +222,11 @@ function spawnFood() {
 function draw() {
     ctx.clearRect(0,0,480,480);
 
+    // comida
     ctx.fillStyle = "#f00";
     ctx.fillRect(food.x, food.y, 20, 20);
 
+    // snake
     ctx.fillStyle = skin;
     snake.forEach(s => ctx.fillRect(s.x, s.y, 20, 20));
 }
@@ -232,19 +237,21 @@ function checkCollision() {
     if (head.x < 0 || head.x >= 480 || head.y < 0 || head.y >= 480)
         return true;
 
-    for (let i=1; i<snake.length; i++) {
-        if (head.x === snake[i].x && head.y === snake[i].y) return true;
+    for (let i=1; i < snake.length; i++) {
+        if (head.x === snake[i].x && head.y === snake[i].y)
+            return true;
     }
+
     return false;
 }
 
 function endGame() {
     running = false;
     clearInterval(gameLoop);
-
     if (soundEnabled) gameOverSound.play();
 
     document.getElementById("finalScore").innerText = score;
+
     document.getElementById("game").style.display = "none";
     document.getElementById("touchControls").style.display = "none";
     document.getElementById("gameOver").style.display = "block";
@@ -271,15 +278,14 @@ document.getElementById("btnRight").addEventListener("touchstart", () => {
     if (dx === 0) { dx = 20; dy = 0; }
 });
 
-// También funciona teclado
+// También en PC con teclado
 document.addEventListener("keydown", e => {
-    if (e.key === "ArrowUp" && dy===0) { dx=0; dy=-20; }
-    if (e.key === "ArrowDown" && dy===0) { dx=0; dy=20; }
-    if (e.key === "ArrowLeft" && dx===0) { dx=-20; dy=0; }
-    if (e.key === "ArrowRight" && dx===0) { dx=20; dy=0; }
+    if (e.key === "ArrowUp" && dy === 0) { dx = 0; dy = -20; }
+    if (e.key === "ArrowDown" && dy === 0) { dx = 0; dy = 20; }
+    if (e.key === "ArrowLeft" && dx === 0) { dx = -20; dy = 0; }
+    if (e.key === "ArrowRight" && dx === 0) { dx = 20; dy = 0; }
 });
 </script>
 
 </body>
 </html>
-
