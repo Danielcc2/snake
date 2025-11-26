@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Snake terraplanista =)</title>
+<title>Snake iPhone Responsive</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
 <style>
@@ -24,46 +24,40 @@
         width: 100%;
     }
 
-    /* CANVAS RESPONSIVE */
+    /* WRAPPER DEL CANVAS */
     #canvasWrapper {
         width: 100%;
-        max-width: 480px;
         margin: 0 auto;
     }
 
     canvas {
-        width: 100% !important;
-        height: auto !important;
+        width: 100%;
+        height: auto;
         display: none;
         background: #000;
         border: 3px solid #0f0;
         image-rendering: pixelated;
-        margin-bottom: 30px;
+        margin-bottom: 20px;
     }
 
-    /* BOTONES TÁCTILES con separación amplia */
+    /* CONTROLES TÁCTILES */
     #touchControls {
-        width: 300px;
-        margin: 35px auto 0 auto;
         display: none;
     }
 
     .dpad-row {
         display: flex;
         justify-content: center;
-        margin: 25px 0;
+        margin: 15px 0;
     }
 
     .dpad-btn {
-        width: 95px;
-        height: 95px;
         background: rgba(0,255,0,0.25);
         border: 3px solid #0f0;
         border-radius: 20px;
-        font-size: 38px;
-        color: #0f0;
         user-select: none;
-        margin: 0 25px;
+        color: #0f0;
+        font-weight: bold;
     }
 </style>
 </head>
@@ -74,7 +68,14 @@
 
     <!-- MENÚ -->
     <div id="menu">
-        <h1>🐍 Snake iPhone Terraplanista =)</h1>
+        <h1>🐍 Snake Terraplanista</h1>
+
+        <p><b>Elige tu dispositivo:</b></p>
+        <select id="deviceSelect">
+            <option value="small">iPhone / iPhone Mini</option>
+            <option value="medium">iPhone Pro</option>
+            <option value="large" selected>iPhone Pro Max</option>
+        </select>
 
         <p><b>Nivel:</b></p>
         <select id="levelSelect">
@@ -82,12 +83,6 @@
             <option value="100">Normal</option>
             <option value="60">Difícil</option>
             <option value="40">Insano</option>
-        </select>
-
-        <p><b>Sonido:</b></p>
-        <select id="soundSelect">
-            <option value="on">Activado</option>
-            <option value="off">Desactivado</option>
         </select>
 
         <br><br>
@@ -124,10 +119,11 @@
 
 </div>
 
+
 <script>
-// ------------------------------
-// VARIABLES PRINCIPALES
-// ------------------------------
+// -----------------------------------------------------------------------
+// VARIABLES
+// -----------------------------------------------------------------------
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -138,32 +134,59 @@ let score = 0;
 let speed = 150;
 let running = false;
 let gameLoop;
-let soundEnabled = true;
 
-// ------------------------------
-// SONIDOS
-// ------------------------------
-const eatSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
-const gameOverSound = new Audio("https://actions.google.com/sounds/v1/cartoon/concussive_hit_guitar_boing.ogg");
+// -----------------------------------------------------------------------
+// AJUSTE RESPONSIVE SEGÚN DISPOSITIVO
+// -----------------------------------------------------------------------
+function setDeviceLayout() {
+    const device = document.getElementById("deviceSelect").value;
 
-// ------------------------------
-// CANVAS RESPONSIVE
-// ------------------------------
-function resizeCanvas() {
+    const controls = document.getElementById("touchControls");
+    const buttons = document.querySelectorAll(".dpad-btn");
     const wrapper = document.getElementById("canvasWrapper");
-    const size = Math.min(wrapper.clientWidth, window.innerHeight * 0.6);
-    canvas.style.width = size + "px";
-    canvas.style.height = size + "px";
-}
-window.addEventListener("resize", resizeCanvas);
-resizeCanvas();
 
-// ------------------------------
+    if (device === "small") {             // iPhone pequeño
+        wrapper.style.maxWidth = "320px";
+        buttons.forEach(btn => {
+            btn.style.width = "70px";
+            btn.style.height = "70px";
+            btn.style.fontSize = "28px";
+            btn.style.margin = "0 10px";
+        });
+    }
+
+    if (device === "medium") {            // iPhone Pro
+        wrapper.style.maxWidth = "380px";
+        buttons.forEach(btn => {
+            btn.style.width = "85px";
+            btn.style.height = "85px";
+            btn.style.fontSize = "32px";
+            btn.style.margin = "0 15px";
+        });
+    }
+
+    if (device === "large") {            // iPhone Pro Max
+        wrapper.style.maxWidth = "480px";
+        buttons.forEach(btn => {
+            btn.style.width = "95px";
+            btn.style.height = "95px";
+            btn.style.fontSize = "38px";
+            btn.style.margin = "0 25px";
+        });
+    }
+}
+
+// Aplicar cambios al seleccionar dispositivo
+document.getElementById("deviceSelect").addEventListener("change", setDeviceLayout);
+
+// -----------------------------------------------------------------------
 // INICIO DE JUEGO
-// ------------------------------
+// -----------------------------------------------------------------------
 function startGame() {
+
+    setDeviceLayout(); // ← aplicar el tamaño correcto antes de iniciar
+
     speed = parseInt(document.getElementById("levelSelect").value);
-    soundEnabled = document.getElementById("soundSelect").value === "on";
 
     snake = [
         { x: 200, y: 200 },
@@ -188,25 +211,16 @@ function startGame() {
     gameLoop = setInterval(update, speed);
 }
 
-// ------------------------------
-// LOOP PRINCIPAL
-// ------------------------------
+// -----------------------------------------------------------------------
+// JUEGO (funciones iguales que antes)
+// -----------------------------------------------------------------------
 function update() {
     if (!running) return;
-
     moveSnake();
-
-    if (checkCollision()) {
-        endGame();
-        return;
-    }
-
+    if (checkCollision()) return endGame();
     draw();
 }
 
-// ------------------------------
-// MOVIMIENTO
-// ------------------------------
 function moveSnake() {
     const head = { x: snake[0].x + dx, y: snake[0].y + dy };
     snake.unshift(head);
@@ -215,15 +229,11 @@ function moveSnake() {
         score++;
         document.getElementById("score").innerText = score;
         spawnFood();
-        if (soundEnabled) eatSound.play();
     } else {
         snake.pop();
     }
 }
 
-// ------------------------------
-// SPAWN COMIDA
-// ------------------------------
 function spawnFood() {
     food = {
         x: Math.floor(Math.random() * 24) * 20,
@@ -231,46 +241,34 @@ function spawnFood() {
     };
 }
 
-// ------------------------------
-// DIBUJAR
-// ------------------------------
 function draw() {
     ctx.clearRect(0, 0, 480, 480);
 
-    // comida
     ctx.fillStyle = "#ff0000";
     ctx.fillRect(food.x, food.y, 20, 20);
 
-    // serpiente simple en verde
     ctx.fillStyle = "#00ff00";
     snake.forEach(seg => {
         ctx.fillRect(seg.x, seg.y, 20, 20);
     });
 }
 
-// ------------------------------
-// COLISIONES
-// ------------------------------
 function checkCollision() {
-    const head = snake[0];
-    if (head.x < 0 || head.x >= 480 || head.y < 0 || head.y >= 480)
+    const h = snake[0];
+
+    if (h.x < 0 || h.x >= 480 || h.y < 0 || h.y >= 480)
         return true;
 
-    for (let i=1; i<snake.length; i++) {
-        if (head.x === snake[i].x && head.y === snake[i].y)
+    for (let i = 1; i < snake.length; i++)
+        if (h.x === snake[i].x && h.y === snake[i].y)
             return true;
-    }
 
     return false;
 }
 
-// ------------------------------
-// GAME OVER
-// ------------------------------
 function endGame() {
     running = false;
     clearInterval(gameLoop);
-    if (soundEnabled) gameOverSound.play();
 
     document.getElementById("finalScore").innerText = score;
     document.getElementById("game").style.display = "none";
@@ -278,22 +276,15 @@ function endGame() {
     document.getElementById("gameOver").style.display = "block";
 }
 
-// ------------------------------
-// CONTROLES TÁCTILES
-// ------------------------------
-document.getElementById("btnUp").addEventListener("touchstart", () => {
-    if (dy === 0) { dx = 0; dy = -20; }
-});
-document.getElementById("btnDown").addEventListener("touchstart", () => {
-    if (dy === 0) { dx = 0; dy = 20; }
-});
-document.getElementById("btnLeft").addEventListener("touchstart", () => {
-    if (dx === 0) { dx = -20; dy = 0; }
-});
-document.getElementById("btnRight").addEventListener("touchstart", () => {
-    if (dx === 0) { dx = 20; dy = 0; }
-});
+// -----------------------------------------------------------------------
+// CONTROLES
+// -----------------------------------------------------------------------
+document.getElementById("btnUp").addEventListener("touchstart", () => { if (dy === 0) { dx = 0; dy = -20; }});
+document.getElementById("btnDown").addEventListener("touchstart", () => { if (dy === 0) { dx = 0; dy = 20; }});
+document.getElementById("btnLeft").addEventListener("touchstart", () => { if (dx === 0) { dx = -20; dy = 0; }});
+document.getElementById("btnRight").addEventListener("touchstart", () => { if (dx === 0) { dx = 20; dy = 0; }});
 </script>
 
 </body>
 </html>
+
