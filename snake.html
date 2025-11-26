@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Snake Avanzado</title>
+<style>
+    body {
+        background: #111;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+    }
+
+    #container {
+        text-align: center;
+    }
+
+    canvas {
+        background: #000;
+        border: 3px solid #0f0;
+        image-rendering: pixelated;
+        display: none;
+    }
+
+    h1 { margin-bottom: 10px; }
+
+    .menu, .game-over {
+        display: block;
+    }
+
+    button {
+        padding: 10px 20px;
+        margin: 5px;
+        background: #0f0;
+        color: #000;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+    }
+
+    select {
+        padding: 5px;
+        margin: 5px;
+    }
+
+    #scoreBox, #levelBox {
+        display: none;
+        font-size: 20px;
+        margin-bottom: 10px;
+    }
+</style>
+</head>
+<body>
+
+<div id="container">
+
+    <!-- MENU PRINCIPAL -->
+    <div id="menu" class="menu">
+        <h1>🐍 Snake Avanzado</h1>
+
+        <p><b>Selecciona skin de la serpiente:</b></p>
+        <select id="skinSelect">
+            <option value="#0f0">Verde clásico</option>
+            <option value="#0ff">Cian</option>
+            <option value="#f0f">Magenta</option>
+            <option value="#ff0">Amarillo</option>
+            <option value="#f00">Rojo</option>
+        </select>
+
+        <p><b>Selecciona nivel (velocidad):</b></p>
+        <select id="levelSelect">
+            <option value="150">Fácil</option>
+            <option value="100">Normal</option>
+            <option value="60">Difícil</option>
+            <option value="40">Insano</option>
+        </select>
+
+        <p><b>Sonido:</b></p>
+        <select id="soundSelect">
+            <option value="on">Activado</option>
+            <option value="off">Desactivado</option>
+        </select>
+
+        <br><br>
+        <button onclick="startGame()">Iniciar Juego</button>
+
+        <h2>🏆 Ranking (top 5)</h2>
+        <ul id="rankingList"></ul>
+    </div>
+
+    <div id="scoreBox">Puntuación: <span id="score">0</span></div>
+    <div id="levelBox">Nivel: <span id="nivelActual">Normal</span></div>
+
+    <canvas id="game" width="480" height="480"></canvas>
+
+    <div id="gameOver" class="game-over" style="display:none;">
+        <h1>💀 Fin del juego</h1>
+        <p>Puntuación final: <span id="finalScore"></span></p>
+        <button onclick="backToMenu()">Volver al menú</button>
+        <button onclick="startGame()">Jugar otra vez</button>
+    </div>
+</div>
+
+<script>
+//------------------
+// Variables globales
+//------------------
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let snake = [];
+let food = {};
+let dx = 20, dy = 0;
+let gameLoop;
+let speed = 150;
+let running = false;
+let score = 0;
+let skin = "#0f0";
+let soundEnabled = true;
+
+// Sonidos
+const eatSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+const gameOverSound = new Audio("https://actions.google.com/sounds/v1/cartoon/concussive_hit_guitar_boing.ogg");
+
+//------------------
+// FUNCIONES PRINCIPALES
+//------------------
+function startGame() {
+    // Obtener config del menú
+    skin = document.getElementById("skinSelect").value;
+    speed = parseInt(document.getElementById("levelSelect").value);
+    soundEnabled = document.getElementById("soundSelect").value === "on";
+
+    // Reset
+    snake = [
+        {x: 200, y: 200},
+        {x: 180, y: 200},
+        {x: 160, y: 200}
+    ];
+    dx = 20; dy = 0;
+    score = 0;
+    document.getElementById("score").innerText = score;
+
+    // UI
+    document.getElementById("menu").style.display = "none";
+    document.getElementById("gameOver").style.display = "none";
+    document.getElementById("game").style.display = "block";
+    document.getElementById("scoreBox").style.display = "block";
+    document.getElementById("levelBox").style.display = "block";
+
+    spawnFood();
+    running = true;
+    clearInterval(gameLoop);
+    gameLoop = setInterval(update, speed);
+}
+
+function update() {
+    if (!running) return;
+    
+    moveSnake();
+
+    if (checkCollision()) {
+        endGame();
+        return;
+    }
+
+    drawGame();
+}
+
+function moveSnake() {
+    const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+
+    snake.unshift(head);
+
+    // Comer comida
+    if (head.x === food.x && head.y === food.y) {
+        score++;
+        document.getElementById("score").innerText = score;
+        spawnFood();
+        if (soundEnabled) eatSound.play();
+    } else {
+        snake.pop();
+    }
+}
+
+function spawnFood() {
+    food = {
+        x: Math.floor(Math.random()*24)*20,
+        y: Math.floor(Math.random()*24)*20
+    };
+}
+
+function drawGame() {
+    ctx.clearRect(0,0,480,480);
+
+    // Dibujar comida
+    ctx.fillStyle = "#f00";
+    ctx.fillRect(food.x, food.y, 20, 20);
+
+    // Dibujar serpiente
+    ctx.fillStyle = skin;
+    snake.forEach(segment => {
+        ctx.fillRect(segment.x, segment.y, 20, 20);
+    });
+}
+
+function checkCollision() {
+    const head = snake[0];
+
+    // Colisión con paredes
+    if (head.x < 0 || head.x >= 480 || head.y < 0 || head.y >= 480) {
+        return true;
+    }
+
+    // Colisión con cuerpo
+    for (let i = 1; i < snake.length; i++) {
+        if (head.x === snake[i].x && head.y === snake[i].y) return true;
+    }
+    return false;
+}
+
+function endGame() {
+    running = false;
+    clearInterval(gameLoop);
+    if (soundEnabled) gameOverSound.play();
+
+    // Ranking
+    saveScore(score);
+
+    document.getElementById("finalScore").innerText = score;
+    document.getElementById("game").style.display = "none";
+    document.getElementById("gameOver").style.display = "block";
+}
+
+//------------------
+// CONTROLES
+//------------------
+document.addEventListener("keydown", e => {
+    if (!running) return;
+
+    if (e.key === "ArrowUp" || e.key === "w") {
+        if (dy === 0) { dx = 0; dy = -20; }
+    }
+    if (e.key === "ArrowDown" || e.key === "s") {
+        if (dy === 0) { dx = 0; dy = 20; }
+    }
+    if (e.key === "ArrowLeft" || e.key === "a") {
+        if (dx === 0) { dx = -20; dy = 0; }
+    }
+    if (e.key === "ArrowRight" || e.key === "d") {
+        if (dx === 0) { dx = 20; dy = 0; }
+    }
+
+    // Pausa (tecla P)
+    if (e.key === "p") {
+        running = !running;
+    }
+});
+
+//------------------
+// SISTEMA DE RANKING (LocalStorage)
+//------------------
+function saveScore(score) {
+    let ranking = JSON.parse(localStorage.getItem("snake_rank")) || [];
+    ranking.push(score);
+    ranking.sort((a,b)=>b-a);
+    ranking = ranking.slice(0,5);
+    localStorage.setItem("snake_rank", JSON.stringify(ranking));
+    loadRanking();
+}
+
+function loadRanking() {
+    const list = document.getElementById("rankingList");
+    list.innerHTML = "";
+    const ranking = JSON.parse(localStorage.getItem("snake_rank")) || [];
+    ranking.forEach((s,i)=>{
+        const li = document.createElement("li");
+        li.innerText = (i+1)+". "+s+" pts";
+        list.appendChild(li);
+    });
+}
+loadRanking();
+
+function backToMenu() {
+    document.getElementById("menu").style.display = "block";
+    document.getElementById("gameOver").style.display = "none";
+}
+</script>
+
+</body>
+</html>
